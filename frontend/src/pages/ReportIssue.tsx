@@ -1,0 +1,85 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CheckCircle, Upload } from "lucide-react";
+import { categories } from "@/lib/mockData";
+
+const ReportIssue = () => {
+  const [submitted, setSubmitted] = useState(false);
+  const [complaintId] = useState(`HA-2025-${String(Math.floor(Math.random() * 900 + 100))}`);
+
+  if (submitted) {
+    return (
+      <div className="container mx-auto px-4 py-20 flex flex-col items-center text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success/15 mb-6">
+          <CheckCircle className="h-10 w-10 text-success" />
+        </div>
+        <h1 className="text-2xl font-bold mb-2">Complaint Submitted!</h1>
+        <p className="text-muted-foreground mb-4">Your complaint has been registered successfully.</p>
+        <div className="rounded-lg border bg-card p-4 card-shadow">
+          <p className="text-sm text-muted-foreground">Your Complaint ID</p>
+          <p className="text-2xl font-bold text-primary">{complaintId}</p>
+        </div>
+        <p className="text-sm text-muted-foreground mt-4">Save this ID to track your complaint status.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-12 max-w-2xl">
+      <h1 className="text-2xl md:text-3xl font-bold mb-2">Report an Issue</h1>
+      <p className="text-muted-foreground mb-8">Fill in the details below. We'll route it to the right department.</p>
+
+      <form
+        onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}
+        className="space-y-6"
+      >
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select required>
+            <SelectTrigger id="category" className="bg-card">
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent className="bg-card z-50">
+              {categories.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="title">Title</Label>
+          <Input id="title" placeholder="e.g. Pothole on Main Road" required className="bg-card" />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea id="description" placeholder="Describe the issue in detail..." rows={4} required className="bg-card" />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="location">Location / Address</Label>
+          <Input id="location" placeholder="e.g. Ward 5, Main Street" required className="bg-card" />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Image (optional)</Label>
+          <div className="flex items-center gap-3 rounded-lg border border-dashed bg-card p-6 cursor-pointer hover:bg-muted/50 transition-colors">
+            <Upload className="h-5 w-5 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Click or drag to upload an image</span>
+          </div>
+        </div>
+
+        <Button type="submit" size="lg" className="w-full font-semibold">
+          Submit Complaint
+        </Button>
+      </form>
+    </div>
+  );
+};
+
+export default ReportIssue;
