@@ -4,12 +4,53 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, Upload } from "lucide-react";
+import { CheckCircle, Upload, Loader2 } from "lucide-react";
 import { categories } from "@/lib/mockData";
+import { complaintsApi } from "@/lib/api";
 
 const ReportIssue = () => {
   const [submitted, setSubmitted] = useState(false);
-  const [complaintId] = useState(`HA-2025-${String(Math.floor(Math.random() * 900 + 100))}`);
+  const [complaintId, setComplaintId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [category, setCategory] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("category", category);
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("location", location);
+      if (image) {
+        formData.append("image", image);
+      }
+
+      const res = await complaintsApi.submit(formData);
+      setComplaintId(res.data.complaint_id);
+      setSubmitted(true);
+    } catch (err: any) {
+      const data = err.response?.data;
+      if (data) {
+        const firstError = typeof data === "string"
+          ? data
+          : Object.values(data).flat()[0] as string;
+        setError(firstError || "Failed to submit complaint.");
+      } else {
+        setError("Failed to submit complaint. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (submitted) {
     return (
@@ -33,13 +74,16 @@ const ReportIssue = () => {
       <h1 className="text-2xl md:text-3xl font-bold mb-2">Report an Issue</h1>
       <p className="text-muted-foreground mb-8">Fill in the details below. We'll route it to the right department.</p>
 
-      <form
-        onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }}
-        className="space-y-6"
-      >
+      {error && (
+        <div className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive p-3 mb-4 text-sm">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
-          <Select required>
+          <Select required value={category} onValueChange={setCategory}>
             <SelectTrigger id="category" className="bg-card">
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
@@ -53,29 +97,63 @@ const ReportIssue = () => {
 
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
-          <Input id="title" placeholder="e.g. Pothole on Main Road" required className="bg-card" />
+          <Input
+            id="title"
+            placeholder="e.g. Pothole on Main Road"
+            required
+            className="bg-card"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
-          <Textarea id="description" placeholder="Describe the issue in detail..." rows={4} required className="bg-card" />
+          <Textarea
+            id="description"
+            placeholder="Describe the issue in detail..."
+            rows={4}
+            required
+            className="bg-card"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="location">Location / Address</Label>
-          <Input id="location" placeholder="e.g. Ward 5, Main Street" required className="bg-card" />
+          <Input
+            id="location"
+            placeholder="e.g. Ward 5, Main Street"
+            required
+            className="bg-card"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+          />
         </div>
 
         <div className="space-y-2">
           <Label>Image (optional)</Label>
-          <div className="flex items-center gap-3 rounded-lg border border-dashed bg-card p-6 cursor-pointer hover:bg-muted/50 transition-colors">
+          <label className="flex items-center gap-3 rounded-lg border border-dashed bg-card p-6 cursor-pointer hover:bg-muted/50 transition-colors">
             <Upload className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Click or drag to upload an image</span>
-          </div>
+            <span className="text-sm text-muted-foreground">
+              {image ? image.name : "Click or drag to upload an image"}
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => setImage(e.target.files?.[0] || null)}
+            />
+          </label>
         </div>
 
-        <Button type="submit" size="lg" className="w-full font-semibold">
-          Submit Complaint
+        <Button type="submit" size="lg" className="w-full font-semibold" disabled={loading}>
+          {loading ? (
+            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</>
+          ) : (
+            "Submit Complaint"
+          )}
         </Button>
       </form>
     </div>

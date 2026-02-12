@@ -1,19 +1,42 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, CheckCircle, Circle } from "lucide-react";
-import { sampleComplaints, statusSteps } from "@/lib/mockData";
+import { Search, CheckCircle, Circle, Loader2 } from "lucide-react";
+import { statusSteps } from "@/lib/mockData";
 import StatusBadge from "@/components/StatusBadge";
-import type { Complaint } from "@/lib/mockData";
+import type { ComplaintStatus } from "@/lib/mockData";
+import { complaintsApi } from "@/lib/api";
+
+interface TrackResult {
+  id: number;
+  complaint_id: string;
+  title: string;
+  category: string;
+  category_display: string;
+  description: string;
+  location: string;
+  status: ComplaintStatus;
+  date: string;
+}
 
 const TrackComplaint = () => {
   const [query, setQuery] = useState("");
-  const [result, setResult] = useState<Complaint | null | "not_found">(null);
+  const [result, setResult] = useState<TrackResult | null | "not_found">(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleTrack = (e: React.FormEvent) => {
+  const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
-    const found = sampleComplaints.find((c) => c.id.toLowerCase() === query.trim().toLowerCase());
-    setResult(found || "not_found");
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const res = await complaintsApi.track(query.trim());
+      setResult(res.data);
+    } catch {
+      setResult("not_found");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const activeIndex = result && result !== "not_found"
@@ -33,8 +56,13 @@ const TrackComplaint = () => {
           required
           className="bg-card"
         />
-        <Button type="submit">
-          <Search className="h-4 w-4 mr-2" /> Track
+        <Button type="submit" disabled={loading}>
+          {loading ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Search className="h-4 w-4 mr-2" />
+          )}
+          Track
         </Button>
       </form>
 
@@ -49,14 +77,14 @@ const TrackComplaint = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <p className="text-sm text-muted-foreground">Complaint ID</p>
-              <p className="font-bold text-lg">{result.id}</p>
+              <p className="font-bold text-lg">{result.complaint_id}</p>
             </div>
             <StatusBadge status={result.status} />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4 text-sm">
             <div><span className="text-muted-foreground">Title:</span> <span className="font-medium">{result.title}</span></div>
-            <div><span className="text-muted-foreground">Category:</span> <span className="font-medium">{result.category}</span></div>
+            <div><span className="text-muted-foreground">Category:</span> <span className="font-medium">{result.category_display}</span></div>
             <div><span className="text-muted-foreground">Location:</span> <span className="font-medium">{result.location}</span></div>
             <div><span className="text-muted-foreground">Date:</span> <span className="font-medium">{result.date}</span></div>
           </div>
@@ -89,10 +117,6 @@ const TrackComplaint = () => {
           </div>
         </div>
       )}
-
-      <p className="text-xs text-muted-foreground mt-6 text-center">
-        Try: HA-2025-001, HA-2025-002, HA-2025-003, HA-2025-004, HA-2025-005
-      </p>
     </div>
   );
 };
