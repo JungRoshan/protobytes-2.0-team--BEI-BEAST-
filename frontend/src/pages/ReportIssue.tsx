@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CheckCircle, Upload, Loader2, MapPin, ExternalLink, X, ImagePlus } from "lucide-react";
 import { categories } from "@/lib/mockData";
 import { complaintsApi } from "@/lib/api";
-import L from "leaflet";
+import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 // Fix default marker icon for leaflet
@@ -199,8 +199,8 @@ const ReportIssue = () => {
       formData.append("title", title);
       formData.append("description", description);
       formData.append("location", location);
-      if (latitude !== null) formData.append("latitude", String(latitude));
-      if (longitude !== null) formData.append("longitude", String(longitude));
+      if (latitude !== null) formData.append("latitude", latitude.toFixed(6));
+      if (longitude !== null) formData.append("longitude", longitude.toFixed(6));
       // First image goes to the legacy 'image' field
       if (images.length > 0) {
         formData.append("image", images[0]);

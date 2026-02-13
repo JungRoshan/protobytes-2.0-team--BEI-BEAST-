@@ -239,14 +239,27 @@ const AdminDashboard = () => {
                       </p>
                       <p className="text-sm font-medium">{selectedComplaint.location}</p>
                       {selectedComplaint.latitude && selectedComplaint.longitude && (
-                        <a
-                          href={`https://www.google.com/maps?q=${selectedComplaint.latitude},${selectedComplaint.longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 mt-1 text-xs text-primary hover:underline"
-                        >
-                          <ExternalLink className="h-3 w-3" /> Open in Google Maps
-                        </a>
+                        <div className="mt-2 space-y-2">
+                          <div className="rounded-lg overflow-hidden border" style={{ height: "200px" }}>
+                            <iframe
+                              title="Complaint Location"
+                              width="100%"
+                              height="100%"
+                              style={{ border: 0 }}
+                              loading="lazy"
+                              referrerPolicy="no-referrer-when-downgrade"
+                              src={`https://maps.google.com/maps?q=${selectedComplaint.latitude},${selectedComplaint.longitude}&z=15&output=embed`}
+                            />
+                          </div>
+                          <a
+                            href={`https://www.google.com/maps?q=${selectedComplaint.latitude},${selectedComplaint.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                          >
+                            <ExternalLink className="h-3 w-3" /> Open in Google Maps
+                          </a>
+                        </div>
                       )}
                     </div>
                     <div>
