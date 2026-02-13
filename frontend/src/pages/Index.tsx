@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Construction, Trash2, Droplets, Zap, Lightbulb, MessageSquare, FileText, Search, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import heroImage from "@/assets/aaa.jpeg";
+import heroImage from "@/assets/cover.png";
 
 const categoryItems = [
   { id: "road", label: "Road Issues", icon: Construction, color: "text-primary" },
@@ -22,25 +22,30 @@ const Index = () => {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={heroImage} alt="Smart city" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 hero-gradient opacity-80" />
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img
+            src={heroImage}
+            alt="Smart city"
+            className="h-full w-full object-cover scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/80" />
         </div>
-        <div className="relative container mx-auto px-4 py-24 md:py-36 text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-primary-foreground text-balance leading-tight mb-4">
+
+        <div className="relative z-10 container mx-auto px-4 pt-32 pb-12 text-center flex flex-col items-center justify-end h-full mt-20">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white text-balance leading-tight mb-6 drop-shadow-lg">
             Raise Your Voice for a Better City
           </h1>
-          <p className="text-lg md:text-xl text-primary-foreground/85 max-w-2xl mx-auto mb-8">
+          <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-8 drop-shadow-md font-medium">
             Report city problems easily and track their resolution in real time.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button asChild size="lg" className="text-base font-semibold px-8">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-md mx-auto">
+            <Button asChild size="lg" className="text-base font-bold px-6 h-12 shadow-xl hover:scale-105 transition-transform">
               <Link to="/report">
                 Report Issue <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="text-base font-semibold px-8 bg-primary-foreground/10 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground">
+            <Button asChild size="lg" variant="outline" className="text-base font-bold px-6 h-12 border-2 border-white/80 bg-black/30 text-white hover:bg-white hover:text-black hover:border-white shadow-xl backdrop-blur-sm transition-all hover:scale-105">
               <Link to="/track">Track Complaint</Link>
             </Button>
           </div>
@@ -77,8 +82,8 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {steps.map((step, i) => (
               <div key={i} className="flex flex-col items-center text-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full hero-gradient">
-                  <step.icon className="h-7 w-7 text-primary-foreground" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary shadow-lg">
+                  <step.icon className="h-7 w-7 text-white" />
                 </div>
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-card border text-sm font-bold">
                   {i + 1}
