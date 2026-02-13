@@ -20,7 +20,7 @@ const Footer = () => (
       <div>
         <h4 className="font-semibold mb-2">Project</h4>
         <p className="text-muted-foreground">HamroAwaj — E-Governance Civic Complaint Platform</p>
-        <p className="text-muted-foreground mt-1">© 2025 All rights reserved.</p>
+        <p className="text-muted-foreground mt-1">© 2026 All rights reserved.</p>
       </div>
     </div>
   </footer>
