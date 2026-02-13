@@ -81,6 +81,17 @@ export const complaintsApi = {
 
     updateStatus: (id: number, status: string) =>
         api.patch(`/complaints/${id}/`, { status }),
+
+    publicList: (params?: {
+        category?: string;
+        date_from?: string;
+        date_to?: string;
+        status?: string;
+        sort?: string;
+    }) => api.get('/complaints/public/', { params }),
+
+    toggleUpvote: (id: number) =>
+        api.post(`/complaints/${id}/upvote/`),
 };
 
 export default api;

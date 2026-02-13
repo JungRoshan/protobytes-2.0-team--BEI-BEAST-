@@ -58,3 +58,16 @@ class Complaint(models.Model):
             self.complaint_id = f'HA-{year}-{new_num:03d}'
         
         super().save(*args, **kwargs)
+
+
+class Upvote(models.Model):
+    """Model representing an upvote on a complaint"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='upvotes')
+    complaint = models.ForeignKey(Complaint, on_delete=models.CASCADE, related_name='upvotes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'complaint')
+
+    def __str__(self):
+        return f"{self.user.username} upvoted {self.complaint.complaint_id}"

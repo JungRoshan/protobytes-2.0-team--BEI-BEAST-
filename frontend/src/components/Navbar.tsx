@@ -17,6 +17,7 @@ const Navbar = () => {
 
   const navLinks = [
     { label: "Home", to: "/" },
+    { label: "Complaints", to: "/complaints" },
     { label: "Report Issue", to: "/report" },
     { label: "Track Complaint", to: "/track" },
     ...(isAdmin ? [{ label: "Admin", to: "/admin" }] : []),
@@ -37,8 +38,8 @@ const Navbar = () => {
               key={l.to}
               to={l.to}
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname === l.to
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
             >
               {l.label}
@@ -90,8 +91,8 @@ const Navbar = () => {
               to={l.to}
               onClick={() => setOpen(false)}
               className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname === l.to
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               {l.label}
