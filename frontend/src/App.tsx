@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Complaints from "./pages/Complaints";
 import ComplaintDetail from "./pages/ComplaintDetail";
+import GoogleCallback from "./pages/GoogleCallback";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/auth/google/callback" element={<GoogleCallback />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

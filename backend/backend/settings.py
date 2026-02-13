@@ -178,6 +178,7 @@ SIMPLE_JWT = {
 # Google OAuth
 GOOGLE_OAUTH_CLIENT_ID = '1095881933365-9q1n8p6uvaps0dta6a8vh7jie9jagb6p.apps.googleusercontent.com'
 GOOGLE_OAUTH_CLIENT_SECRET = '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'
+GOOGLE_OAUTH_REDIRECT_URI = 'http://127.0.0.1:8000/api/auth/google/callback/'
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -190,6 +191,6 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-ACCOUNT_EMAIL_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = 'none'

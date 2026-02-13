@@ -25,11 +25,14 @@
 | Feature | Description |
 |---|---|
 | 🔐 **User Authentication** | Register, login, and logout with JWT tokens |
-| 📝 **Report Issues** | Submit complaints with category, description, location, and image |
-| 📍 **Geolocation** | Auto-detect your location with one click (OpenStreetMap) |
+| 🔑 **Google OAuth** | Sign in with Google (one-click login/register) |
+| 📝 **Report Issues** | Submit complaints with category, description, location, and multiple images |
+| 📍 **Interactive Map** | Pick location on a Leaflet map or auto-detect with geolocation |
 | 🔎 **Track Complaints** | Track complaint status in real time using a unique Complaint ID |
-| 🛡️ **Admin Dashboard** | View all complaints, see full details (image, user, description), update statuses |
-| 📂 **Category Filtering** | Click a category on the homepage to pre-fill the report form |
+| 📄 **Complaint Detail** | Click any complaint to view full details, images, map, and status timeline |
+| 👍 **Upvote System** | Upvote complaints to prioritize important issues |
+| 🛡️ **Admin Dashboard** | View all complaints, assign to departments/officers, update statuses |
+| 📂 **Category Filtering** | Filter complaints by category, date range, and sort order |
 
 ---
 
@@ -45,6 +48,7 @@
 ### Backend
 - **Django 6.0** + **Django REST Framework**
 - **SimpleJWT** (authentication)
+- **django-allauth** + **google-auth** (Google OAuth)
 - **django-cors-headers** (CORS)
 - **Pillow** (image handling)
 - **SQLite** (database)
@@ -82,13 +86,24 @@ source venv/bin/activate        # Linux/Mac
 # venv\Scripts\activate          # Windows
 
 # Install Python dependencies
+cd backend
 pip install -r requirements.txt
 
 # Run database migrations
-python3 backend/manage.py migrate
+python manage.py migrate
+
+# Seed departments
+python manage.py seed_departments
 
 # Create a superuser (admin account)
-python3 backend/manage.py createsuperuser
+python manage.py createsuperuser
+```
+
+### 3. Google OAuth setup
+
+To enable Google sign-in, add this redirect URI to your Google Cloud Console credentials:
+```
+http://127.0.0.1:8000/api/auth/google/callback/
 ```
 
 ### 3. Frontend setup
@@ -190,6 +205,8 @@ hackathon_project/
 | POST | `/api/auth/logout/` | Logout (blacklists refresh token) |
 | GET | `/api/auth/me/` | Get current user info |
 | POST | `/api/auth/token/refresh/` | Refresh access token |
+| GET | `/api/auth/google/` | Initiate Google OAuth login |
+| GET | `/api/auth/google/callback/` | Google OAuth callback |
 
 ### Complaints
 
