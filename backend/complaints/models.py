@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Complaint(models.Model):
     """Model representing a city complaint/issue report"""
@@ -21,6 +22,7 @@ class Complaint(models.Model):
     
     # Auto-generated ID format: HA-2025-XXX
     complaint_id = models.CharField(max_length=20, unique=True, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='complaints')
     title = models.CharField(max_length=200)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     description = models.TextField()

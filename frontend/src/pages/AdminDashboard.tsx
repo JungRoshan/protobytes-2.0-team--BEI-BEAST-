@@ -4,13 +4,13 @@ import StatusBadge from "@/components/StatusBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Shield, Loader2, ShieldAlert, X, MapPin, Calendar, Tag, Eye } from "lucide-react";
+import { Shield, Loader2, ShieldAlert, X, MapPin, Calendar, Tag, Eye, User } from "lucide-react";
 import { statusSteps } from "@/lib/mockData";
 import type { ComplaintStatus } from "@/lib/mockData";
 import { useAuth } from "@/contexts/AuthContext";
 import { complaintsApi } from "@/lib/api";
 
-const API_BASE = "http://localhost:8000";
+
 
 interface AdminComplaint {
   id: number;
@@ -25,6 +25,7 @@ interface AdminComplaint {
   image: string | null;
   created_at: string;
   updated_at: string;
+  submitted_by: string | null;
 }
 
 const AdminDashboard = () => {
@@ -169,6 +170,12 @@ const AdminDashboard = () => {
                     </p>
                     <p className="text-sm font-medium">{selectedComplaint.date}</p>
                   </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                      <User className="h-3 w-3" /> Submitted By
+                    </p>
+                    <p className="text-sm font-medium">{selectedComplaint.submitted_by || "Unknown"}</p>
+                  </div>
                 </div>
               </div>
 
@@ -176,9 +183,9 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Uploaded Image</p>
                 {selectedComplaint.image ? (
-                  <a href={`${API_BASE}${selectedComplaint.image}`} target="_blank" rel="noopener noreferrer">
+                  <a href={selectedComplaint.image} target="_blank" rel="noopener noreferrer">
                     <img
-                      src={`${API_BASE}${selectedComplaint.image}`}
+                      src={selectedComplaint.image}
                       alt={selectedComplaint.title}
                       className="rounded-lg border object-cover w-full max-h-80 hover:opacity-90 transition-opacity cursor-pointer"
                     />

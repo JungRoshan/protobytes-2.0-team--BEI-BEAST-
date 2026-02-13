@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, Upload, Loader2 } from "lucide-react";
+import { CheckCircle, Upload, Loader2, MapPin } from "lucide-react";
 import { categories } from "@/lib/mockData";
 import { complaintsApi } from "@/lib/api";
 
@@ -27,6 +27,44 @@ const ReportIssue = () => {
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [image, setImage] = useState<File | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            { headers: { "Accept-Language": "en" } }
+          );
+          const data = await res.json();
+          const addr = data.address;
+          const parts = [
+            addr.road,
+            addr.neighbourhood || addr.suburb,
+            addr.city || addr.town || addr.village,
+            addr.state,
+          ].filter(Boolean);
+          setLocation(parts.join(", ") || data.display_name || `${latitude}, ${longitude}`);
+        } catch {
+          setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      (err) => {
+        setError("Could not get your location. Please allow location access.");
+        setGeoLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,14 +169,29 @@ const ReportIssue = () => {
 
         <div className="space-y-2">
           <Label htmlFor="location">Location / Address</Label>
-          <Input
-            id="location"
-            placeholder="e.g. Ward 5, Main Street"
-            required
-            className="bg-card"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-          />
+          <div className="flex gap-2">
+            <Input
+              id="location"
+              placeholder="e.g. Ward 5, Main Street"
+              required
+              className="bg-card flex-1"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0"
+              onClick={handleUseMyLocation}
+              disabled={geoLoading}
+            >
+              {geoLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <><MapPin className="h-4 w-4 mr-1" /> Use My Location</>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-2">

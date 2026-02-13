@@ -17,6 +17,10 @@ class ComplaintViewSet(viewsets.ModelViewSet):
             return ComplaintListSerializer
         return ComplaintSerializer
 
+    def perform_create(self, serializer):
+        """Associate the complaint with the authenticated user."""
+        serializer.save(user=self.request.user)
+
     @action(detail=False, methods=['get'], url_path='track/(?P<complaint_id>[^/.]+)', permission_classes=[AllowAny])
     def track_complaint(self, request, complaint_id=None):
         """

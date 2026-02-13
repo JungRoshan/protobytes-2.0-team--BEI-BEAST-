@@ -5,14 +5,14 @@ from .models import Complaint
 class ComplaintAdmin(admin.ModelAdmin):
     """Admin interface for Complaint model"""
     
-    list_display = ['complaint_id', 'title', 'category', 'status', 'location', 'created_at']
+    list_display = ['complaint_id', 'title', 'category', 'status', 'location', 'user', 'created_at']
     list_filter = ['status', 'category', 'created_at']
-    search_fields = ['complaint_id', 'title', 'description', 'location']
+    search_fields = ['complaint_id', 'title', 'description', 'location', 'user__username']
     readonly_fields = ['complaint_id', 'created_at', 'updated_at']
     
     fieldsets = (
         ('Complaint Information', {
-            'fields': ('complaint_id', 'title', 'category', 'description')
+            'fields': ('complaint_id', 'user', 'title', 'category', 'description')
         }),
         ('Location & Status', {
             'fields': ('location', 'status', 'image')

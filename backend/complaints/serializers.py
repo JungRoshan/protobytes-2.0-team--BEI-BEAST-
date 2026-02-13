@@ -5,6 +5,7 @@ class ComplaintSerializer(serializers.ModelSerializer):
     """Serializer for the Complaint model"""
     
     date = serializers.SerializerMethodField()
+    submitted_by = serializers.SerializerMethodField()
     
     class Meta:
         model = Complaint
@@ -19,13 +20,20 @@ class ComplaintSerializer(serializers.ModelSerializer):
             'image',
             'date',
             'created_at',
-            'updated_at'
+            'updated_at',
+            'submitted_by',
         ]
         read_only_fields = ['complaint_id', 'created_at', 'updated_at']
     
     def get_date(self, obj):
         """Format date for frontend compatibility"""
         return obj.created_at.strftime('%Y-%m-%d')
+    
+    def get_submitted_by(self, obj):
+        """Return the username of the user who submitted the complaint"""
+        if obj.user:
+            return obj.user.username
+        return None
     
     def to_representation(self, instance):
         """Customize output to match frontend expectations"""
