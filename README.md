@@ -209,8 +209,8 @@ hackathon_project/
 |---|---|---|
 | Sabin Kumar Chaudhary | sabinchaudhary168@gmail.com | SABIN-KUMAR |
 | Roshan Jung Kunwar | roshanjungkunwar50@gmail.com | JungRoshan |
-| Samir Ban | samir.078bei042.acem.edu.np | SamirBan |
-| Umesh Kumar Rajbanshi | umesh.078bei047.acem.edu.np | umess-ss |
+| Samir Ban | samir.078bei042@acem.edu.np | SamirBan |
+| Umesh Kumar Rajbanshi | umesh.078bei047@acem.edu.np | umess-ss |
 
 ---
 
