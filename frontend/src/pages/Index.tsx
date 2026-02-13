@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-city.jpg";
 
 const categoryItems = [
-  { label: "Road Issues", icon: Construction, color: "text-primary" },
-  { label: "Waste Management", icon: Trash2, color: "text-success" },
-  { label: "Water Problems", icon: Droplets, color: "text-info" },
-  { label: "Electricity", icon: Zap, color: "text-warning" },
-  { label: "Streetlight", icon: Lightbulb, color: "text-accent" },
-  { label: "Other Issues", icon: MessageSquare, color: "text-muted-foreground" },
+  { id: "road", label: "Road Issues", icon: Construction, color: "text-primary" },
+  { id: "waste", label: "Waste Management", icon: Trash2, color: "text-success" },
+  { id: "water", label: "Water Problems", icon: Droplets, color: "text-info" },
+  { id: "electricity", label: "Electricity", icon: Zap, color: "text-warning" },
+  { id: "streetlight", label: "Streetlight", icon: Lightbulb, color: "text-accent" },
+  { id: "other", label: "Other Issues", icon: MessageSquare, color: "text-muted-foreground" },
 ];
 
 const steps = [
@@ -57,7 +57,7 @@ const Index = () => {
           {categoryItems.map((cat) => (
             <Link
               key={cat.label}
-              to="/report"
+              to={`/report?category=${cat.id}`}
               className="group flex flex-col items-center gap-3 rounded-xl border bg-card p-6 card-shadow transition-all hover:card-shadow-hover hover:-translate-y-1"
             >
               <cat.icon className={`h-8 w-8 ${cat.color} transition-transform group-hover:scale-110`} />

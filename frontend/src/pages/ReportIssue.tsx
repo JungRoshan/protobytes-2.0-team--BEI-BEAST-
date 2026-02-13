@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +14,15 @@ const ReportIssue = () => {
   const [complaintId, setComplaintId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [searchParams] = useSearchParams();
   const [category, setCategory] = useState("");
+
+  useEffect(() => {
+    const catParam = searchParams.get("category");
+    if (catParam && categories.some((c) => c.id === catParam)) {
+      setCategory(catParam);
+    }
+  }, [searchParams]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");

@@ -77,6 +77,8 @@ export const complaintsApi = {
 
     list: () => api.get('/complaints/'),
 
+    get: (id: number) => api.get(`/complaints/${id}/`),
+
     updateStatus: (id: number, status: string) =>
         api.patch(`/complaints/${id}/`, { status }),
 };

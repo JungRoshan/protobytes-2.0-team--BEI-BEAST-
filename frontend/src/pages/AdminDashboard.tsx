@@ -3,11 +3,14 @@ import { useNavigate } from "react-router-dom";
 import StatusBadge from "@/components/StatusBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Shield, Loader2, ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Shield, Loader2, ShieldAlert, X, MapPin, Calendar, Tag, Eye } from "lucide-react";
 import { statusSteps } from "@/lib/mockData";
 import type { ComplaintStatus } from "@/lib/mockData";
 import { useAuth } from "@/contexts/AuthContext";
 import { complaintsApi } from "@/lib/api";
+
+const API_BASE = "http://localhost:8000";
 
 interface AdminComplaint {
   id: number;
@@ -15,9 +18,13 @@ interface AdminComplaint {
   title: string;
   category: string;
   category_display: string;
+  description: string;
   location: string;
   status: ComplaintStatus;
   date: string;
+  image: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 const AdminDashboard = () => {
@@ -26,6 +33,8 @@ const AdminDashboard = () => {
   const [complaints, setComplaints] = useState<AdminComplaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedComplaint, setSelectedComplaint] = useState<AdminComplaint | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -54,8 +63,23 @@ const AdminDashboard = () => {
       setComplaints((prev) =>
         prev.map((c) => (c.id === id ? { ...c, status: newStatus } : c))
       );
+      if (selectedComplaint?.id === id) {
+        setSelectedComplaint((prev) => prev ? { ...prev, status: newStatus } : null);
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || "Failed to update status.");
+    }
+  };
+
+  const viewDetail = async (complaint: AdminComplaint) => {
+    setDetailLoading(true);
+    try {
+      const res = await complaintsApi.get(complaint.id);
+      setSelectedComplaint(res.data);
+    } catch {
+      setSelectedComplaint(complaint);
+    } finally {
+      setDetailLoading(false);
     }
   };
 
@@ -85,7 +109,7 @@ const AdminDashboard = () => {
         <Shield className="h-6 w-6 text-primary" />
         <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
       </div>
-      <p className="text-muted-foreground mb-8">Manage and update complaint statuses.</p>
+      <p className="text-muted-foreground mb-8">Manage and update complaint statuses. Click the eye icon to view full details.</p>
 
       {error && (
         <div className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive p-3 mb-4 text-sm">
@@ -93,6 +117,84 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {/* Detail Panel */}
+      {selectedComplaint && (
+        <div className="mb-6 rounded-xl border bg-card card-shadow overflow-hidden">
+          <div className="flex items-center justify-between p-4 border-b bg-muted/30">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Tag className="h-4 w-4 text-primary" />
+              Complaint Details — {selectedComplaint.complaint_id}
+            </h2>
+            <Button variant="ghost" size="icon" onClick={() => setSelectedComplaint(null)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {detailLoading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="p-5 grid md:grid-cols-2 gap-6">
+              {/* Left: Info */}
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Title</p>
+                  <p className="font-semibold text-lg">{selectedComplaint.title}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Description</p>
+                  <p className="text-sm leading-relaxed">{selectedComplaint.description}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                      <Tag className="h-3 w-3" /> Category
+                    </p>
+                    <p className="text-sm font-medium">{selectedComplaint.category_display || selectedComplaint.category}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" /> Location
+                    </p>
+                    <p className="text-sm font-medium">{selectedComplaint.location}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Status</p>
+                    <StatusBadge status={selectedComplaint.status} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                      <Calendar className="h-3 w-3" /> Date Reported
+                    </p>
+                    <p className="text-sm font-medium">{selectedComplaint.date}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Image */}
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Uploaded Image</p>
+                {selectedComplaint.image ? (
+                  <a href={`${API_BASE}${selectedComplaint.image}`} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={`${API_BASE}${selectedComplaint.image}`}
+                      alt={selectedComplaint.title}
+                      className="rounded-lg border object-cover w-full max-h-80 hover:opacity-90 transition-opacity cursor-pointer"
+                    />
+                  </a>
+                ) : (
+                  <div className="flex items-center justify-center rounded-lg border border-dashed bg-muted/30 h-48">
+                    <p className="text-sm text-muted-foreground">No image uploaded</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Table */}
       <div className="rounded-lg border bg-card card-shadow overflow-x-auto">
         <Table>
           <TableHeader>
@@ -103,18 +205,22 @@ const AdminDashboard = () => {
               <TableHead className="hidden lg:table-cell">Location</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Action</TableHead>
+              <TableHead className="w-[50px]">View</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {complaints.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   No complaints found.
                 </TableCell>
               </TableRow>
             ) : (
               complaints.map((c) => (
-                <TableRow key={c.id}>
+                <TableRow
+                  key={c.id}
+                  className={selectedComplaint?.id === c.id ? "bg-primary/5" : ""}
+                >
                   <TableCell className="font-mono text-xs">{c.complaint_id}</TableCell>
                   <TableCell className="font-medium max-w-[200px] truncate">{c.title}</TableCell>
                   <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{c.category_display}</TableCell>
@@ -134,6 +240,16 @@ const AdminDashboard = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => viewDetail(c)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
