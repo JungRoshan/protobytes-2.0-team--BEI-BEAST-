@@ -4,10 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ThumbsUp, MapPin, Calendar, Tag, Loader2, Filter, ArrowUpDown, ImageIcon } from "lucide-react";
+import { ThumbsUp, MapPin, Calendar, Tag, Loader2, Filter, ArrowUpDown, ExternalLink } from "lucide-react";
 import { complaintsApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { categories } from "@/lib/mockData";
+
+interface ComplaintImage {
+    id: number;
+    image: string;
+    uploaded_at: string;
+}
 
 interface PublicComplaint {
     id: number;
@@ -17,8 +23,11 @@ interface PublicComplaint {
     category_display: string;
     description: string;
     location: string;
+    latitude: number | null;
+    longitude: number | null;
     status: string;
     image: string | null;
+    images: ComplaintImage[];
     date: string;
     upvote_count: number;
     is_upvoted: boolean;
@@ -93,6 +102,12 @@ const Complaints = () => {
         setDateFrom("");
         setDateTo("");
         setSort("recent");
+    };
+
+    // Get the display image(s) for a complaint
+    const getCardImage = (c: PublicComplaint): string | null => {
+        if (c.images && c.images.length > 0) return c.images[0].image;
+        return c.image;
     };
 
     return (
@@ -176,81 +191,103 @@ const Complaints = () => {
                 </div>
             ) : (
                 <div className="grid gap-4 md:grid-cols-2">
-                    {complaints.map((c) => (
-                        <div
-                            key={c.id}
-                            className="rounded-xl border bg-card card-shadow overflow-hidden hover:shadow-lg transition-shadow"
-                        >
-                            {/* Image */}
-                            {c.image && (
-                                <div className="h-48 overflow-hidden border-b">
-                                    <img
-                                        src={c.image}
-                                        alt={c.title}
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
-                            )}
+                    {complaints.map((c) => {
+                        const cardImg = getCardImage(c);
+                        const extraCount = c.images ? c.images.length - 1 : 0;
 
-                            <div className="p-5">
-                                {/* Top row: ID + Status */}
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-mono text-muted-foreground">{c.complaint_id}</span>
-                                    <Badge variant="outline" className={statusColors[c.status] || ""}>
-                                        {c.status}
-                                    </Badge>
-                                </div>
-
-                                {/* Title */}
-                                <h3 className="font-semibold text-lg leading-tight mb-2">{c.title}</h3>
-
-                                {/* Description */}
-                                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                                    {c.description}
-                                </p>
-
-                                {/* Meta */}
-                                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-4">
-                                    <span className="flex items-center gap-1">
-                                        <Tag className="h-3 w-3" /> {c.category_display}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <MapPin className="h-3 w-3" /> {c.location}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <Calendar className="h-3 w-3" /> {c.date}
-                                    </span>
-                                    {c.submitted_by && (
-                                        <span className="flex items-center gap-1">
-                                            👤 {c.submitted_by}
-                                        </span>
-                                    )}
-                                </div>
-
-                                {/* Upvote Button */}
-                                <div className="flex items-center justify-between border-t pt-3">
-                                    <Button
-                                        variant={c.is_upvoted ? "default" : "outline"}
-                                        size="sm"
-                                        className={`gap-1.5 ${c.is_upvoted ? "bg-primary text-primary-foreground" : ""}`}
-                                        onClick={() => handleUpvote(c.id)}
-                                        disabled={upvoting === c.id}
-                                    >
-                                        {upvoting === c.id ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <ThumbsUp className={`h-4 w-4 ${c.is_upvoted ? "fill-current" : ""}`} />
+                        return (
+                            <div
+                                key={c.id}
+                                className="rounded-xl border bg-card card-shadow overflow-hidden hover:shadow-lg transition-shadow"
+                            >
+                                {/* Image */}
+                                {cardImg && (
+                                    <div className="relative h-48 overflow-hidden border-b">
+                                        <img
+                                            src={cardImg}
+                                            alt={c.title}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        {extraCount > 0 && (
+                                            <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                                                +{extraCount} photo{extraCount > 1 ? "s" : ""}
+                                            </div>
                                         )}
-                                        Upvote
-                                        <span className="ml-0.5 font-bold">{c.upvote_count}</span>
-                                    </Button>
-                                    {!isAuthenticated && (
-                                        <span className="text-xs text-muted-foreground">Sign in to upvote</span>
-                                    )}
+                                    </div>
+                                )}
+
+                                <div className="p-5">
+                                    {/* Top row: ID + Status */}
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-mono text-muted-foreground">{c.complaint_id}</span>
+                                        <Badge variant="outline" className={statusColors[c.status] || ""}>
+                                            {c.status}
+                                        </Badge>
+                                    </div>
+
+                                    {/* Title */}
+                                    <h3 className="font-semibold text-lg leading-tight mb-2">{c.title}</h3>
+
+                                    {/* Description */}
+                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                        {c.description}
+                                    </p>
+
+                                    {/* Meta */}
+                                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-4">
+                                        <span className="flex items-center gap-1">
+                                            <Tag className="h-3 w-3" /> {c.category_display}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <MapPin className="h-3 w-3" />
+                                            {c.latitude && c.longitude ? (
+                                                <a
+                                                    href={`https://www.google.com/maps?q=${c.latitude},${c.longitude}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-primary hover:underline inline-flex items-center gap-0.5"
+                                                >
+                                                    {c.location} <ExternalLink className="h-2.5 w-2.5" />
+                                                </a>
+                                            ) : (
+                                                c.location
+                                            )}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <Calendar className="h-3 w-3" /> {c.date}
+                                        </span>
+                                        {c.submitted_by && (
+                                            <span className="flex items-center gap-1">
+                                                👤 {c.submitted_by}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Upvote Button */}
+                                    <div className="flex items-center justify-between border-t pt-3">
+                                        <Button
+                                            variant={c.is_upvoted ? "default" : "outline"}
+                                            size="sm"
+                                            className={`gap-1.5 ${c.is_upvoted ? "bg-primary text-primary-foreground" : ""}`}
+                                            onClick={() => handleUpvote(c.id)}
+                                            disabled={upvoting === c.id}
+                                        >
+                                            {upvoting === c.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <ThumbsUp className={`h-4 w-4 ${c.is_upvoted ? "fill-current" : ""}`} />
+                                            )}
+                                            Upvote
+                                            <span className="ml-0.5 font-bold">{c.upvote_count}</span>
+                                        </Button>
+                                        {!isAuthenticated && (
+                                            <span className="text-xs text-muted-foreground">Sign in to upvote</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

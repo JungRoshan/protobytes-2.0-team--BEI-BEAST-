@@ -1,10 +1,16 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from django.db.models import Count
-from .models import Complaint, Upvote
-from .serializers import ComplaintSerializer, ComplaintListSerializer, PublicComplaintSerializer
+from django.contrib.auth.models import User
+from .models import Complaint, ComplaintImage, Upvote, Department, AdminProfile
+from .serializers import (
+    ComplaintSerializer,
+    ComplaintListSerializer,
+    PublicComplaintSerializer,
+    DepartmentSerializer,
+)
 
 
 class ComplaintViewSet(viewsets.ModelViewSet):
@@ -19,9 +25,17 @@ class ComplaintViewSet(viewsets.ModelViewSet):
             return ComplaintListSerializer
         return ComplaintSerializer
 
+    def get_queryset(self):
+        qs = Complaint.objects.select_related('assigned_department', 'assigned_to').all()
+        return qs
+
     def perform_create(self, serializer):
-        """Associate the complaint with the authenticated user."""
-        serializer.save(user=self.request.user)
+        """Associate the complaint with the authenticated user and save additional images."""
+        complaint = serializer.save(user=self.request.user)
+        # Handle multiple image uploads
+        images = self.request.FILES.getlist('images')
+        for img in images:
+            ComplaintImage.objects.create(complaint=complaint, image=img)
 
     @action(detail=False, methods=['get'], url_path='track/(?P<complaint_id>[^/.]+)', permission_classes=[AllowAny])
     def track_complaint(self, request, complaint_id=None):
@@ -35,7 +49,7 @@ class ComplaintViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         except Complaint.DoesNotExist:
             return Response(
-                {"detail": "No complaint found with this ID."}, 
+                {"detail": "No complaint found with this ID."},
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -86,3 +100,60 @@ class ComplaintViewSet(viewsets.ModelViewSet):
             upvote.delete()
             return Response({'upvoted': False, 'upvote_count': complaint.upvotes.count()})
         return Response({'upvoted': True, 'upvote_count': complaint.upvotes.count()}, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='assign', permission_classes=[IsAdminUser])
+    def assign(self, request, pk=None):
+        """Assign a complaint to a department and/or a specific admin user."""
+        complaint = self.get_object()
+        department_id = request.data.get('assigned_department')
+        assigned_to_id = request.data.get('assigned_to')
+
+        if department_id:
+            try:
+                dept = Department.objects.get(id=department_id)
+                complaint.assigned_department = dept
+            except Department.DoesNotExist:
+                return Response({'detail': 'Department not found.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif department_id is None and 'assigned_department' in request.data:
+            complaint.assigned_department = None
+
+        if assigned_to_id:
+            try:
+                user = User.objects.get(id=assigned_to_id, is_staff=True)
+                complaint.assigned_to = user
+            except User.DoesNotExist:
+                return Response({'detail': 'Admin user not found.'}, status=status.HTTP_400_BAD_REQUEST)
+        elif assigned_to_id is None and 'assigned_to' in request.data:
+            complaint.assigned_to = None
+
+        # Auto-set status to Assigned if not already
+        if complaint.status == 'Submitted' and (complaint.assigned_department or complaint.assigned_to):
+            complaint.status = 'Assigned'
+
+        complaint.save()
+        serializer = ComplaintSerializer(complaint)
+        return Response(serializer.data)
+
+
+class DepartmentViewSet(viewsets.ReadOnlyModelViewSet):
+    """Read-only ViewSet for departments."""
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=True, methods=['get'], url_path='admins')
+    def list_admins(self, request, pk=None):
+        """List admin users belonging to this department."""
+        department = self.get_object()
+        profiles = AdminProfile.objects.filter(department=department).select_related('user')
+        data = [
+            {
+                'id': p.user.id,
+                'username': p.user.username,
+                'first_name': p.user.first_name,
+                'last_name': p.user.last_name,
+                'role': p.get_role_display(),
+            }
+            for p in profiles
+        ]
+        return Response(data)

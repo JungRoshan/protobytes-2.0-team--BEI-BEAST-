@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Construction, Trash2, Droplets, Zap, Lightbulb, MessageSquare, FileText, Search, CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import heroImage from "@/assets/hero-city.jpg";
+import heroImage from "@/assets/aaa.jpeg";
 
 const categoryItems = [
   { id: "road", label: "Road Issues", icon: Construction, color: "text-primary" },

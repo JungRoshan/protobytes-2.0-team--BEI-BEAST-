@@ -1,6 +1,11 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { authApi } from '@/lib/api';
 
+interface UserDepartment {
+    id: number;
+    name: string;
+}
+
 interface User {
     id: number;
     username: string;
@@ -8,6 +13,8 @@ interface User {
     first_name: string;
     last_name: string;
     is_staff: boolean;
+    department?: UserDepartment | null;
+    role?: string | null;
 }
 
 interface AuthContextType {

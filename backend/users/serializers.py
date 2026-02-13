@@ -4,10 +4,26 @@ from django.contrib.auth import authenticate
 
 
 class UserSerializer(serializers.ModelSerializer):
+    department = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_staff']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'department', 'role']
         read_only_fields = ['is_staff']
+
+    def get_department(self, obj):
+        if hasattr(obj, 'admin_profile') and obj.admin_profile and obj.admin_profile.department:
+            return {
+                'id': obj.admin_profile.department.id,
+                'name': obj.admin_profile.department.name,
+            }
+        return None
+
+    def get_role(self, obj):
+        if hasattr(obj, 'admin_profile') and obj.admin_profile:
+            return obj.admin_profile.get_role_display()
+        return None
 
 
 class RegisterSerializer(serializers.ModelSerializer):

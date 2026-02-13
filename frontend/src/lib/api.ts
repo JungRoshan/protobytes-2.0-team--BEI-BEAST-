@@ -82,6 +82,9 @@ export const complaintsApi = {
     updateStatus: (id: number, status: string) =>
         api.patch(`/complaints/${id}/`, { status }),
 
+    assign: (id: number, data: { assigned_department?: number | null; assigned_to?: number | null }) =>
+        api.post(`/complaints/${id}/assign/`, data),
+
     publicList: (params?: {
         category?: string;
         date_from?: string;
@@ -92,6 +95,12 @@ export const complaintsApi = {
 
     toggleUpvote: (id: number) =>
         api.post(`/complaints/${id}/upvote/`),
+};
+
+// Departments APIs
+export const departmentsApi = {
+    list: () => api.get('/departments/'),
+    getAdmins: (departmentId: number) => api.get(`/departments/${departmentId}/admins/`),
 };
 
 export default api;

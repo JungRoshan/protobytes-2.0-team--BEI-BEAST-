@@ -4,13 +4,18 @@ import StatusBadge from "@/components/StatusBadge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Shield, Loader2, ShieldAlert, X, MapPin, Calendar, Tag, Eye, User } from "lucide-react";
+import { Shield, Loader2, ShieldAlert, X, MapPin, Calendar, Tag, Eye, User, ExternalLink, Building2, UserCheck } from "lucide-react";
 import { statusSteps } from "@/lib/mockData";
-import type { ComplaintStatus } from "@/lib/mockData";
+import type { ComplaintStatus, Department, DepartmentAdmin } from "@/lib/mockData";
 import { useAuth } from "@/contexts/AuthContext";
-import { complaintsApi } from "@/lib/api";
+import { complaintsApi, departmentsApi } from "@/lib/api";
 
 
+interface ComplaintImage {
+  id: number;
+  image: string;
+  uploaded_at: string;
+}
 
 interface AdminComplaint {
   id: number;
@@ -20,12 +25,19 @@ interface AdminComplaint {
   category_display: string;
   description: string;
   location: string;
+  latitude: number | null;
+  longitude: number | null;
   status: ComplaintStatus;
   date: string;
   image: string | null;
+  images: ComplaintImage[];
   created_at: string;
   updated_at: string;
   submitted_by: string | null;
+  assigned_department: number | null;
+  assigned_department_name: string | null;
+  assigned_to: number | null;
+  assigned_to_name: string | null;
 }
 
 const AdminDashboard = () => {
@@ -36,6 +48,11 @@ const AdminDashboard = () => {
   const [error, setError] = useState("");
   const [selectedComplaint, setSelectedComplaint] = useState<AdminComplaint | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  // Department assignment state
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [deptAdmins, setDeptAdmins] = useState<DepartmentAdmin[]>([]);
+  const [assignLoading, setAssignLoading] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -48,12 +65,16 @@ const AdminDashboard = () => {
       return;
     }
 
-    complaintsApi.list()
-      .then((res) => {
-        setComplaints(res.data.results || res.data);
+    Promise.all([
+      complaintsApi.list(),
+      departmentsApi.list(),
+    ])
+      .then(([complaintsRes, deptsRes]) => {
+        setComplaints(complaintsRes.data.results || complaintsRes.data);
+        setDepartments(deptsRes.data.results || deptsRes.data);
       })
       .catch((err) => {
-        setError(err.response?.data?.detail || "Failed to load complaints.");
+        setError(err.response?.data?.detail || "Failed to load data.");
       })
       .finally(() => setLoading(false));
   }, [isAuthenticated, isAdmin, authLoading, navigate]);
@@ -74,14 +95,71 @@ const AdminDashboard = () => {
 
   const viewDetail = async (complaint: AdminComplaint) => {
     setDetailLoading(true);
+    setDeptAdmins([]);
     try {
       const res = await complaintsApi.get(complaint.id);
       setSelectedComplaint(res.data);
+      // Load department admins if department is assigned
+      if (res.data.assigned_department) {
+        const adminsRes = await departmentsApi.getAdmins(res.data.assigned_department);
+        setDeptAdmins(adminsRes.data);
+      }
     } catch {
       setSelectedComplaint(complaint);
     } finally {
       setDetailLoading(false);
     }
+  };
+
+  const handleAssignDepartment = async (complaintId: number, departmentId: string) => {
+    setAssignLoading(true);
+    setError("");
+    try {
+      const deptId = departmentId === "none" ? null : Number(departmentId);
+      const res = await complaintsApi.assign(complaintId, { assigned_department: deptId });
+      const updated = res.data;
+      setComplaints((prev) =>
+        prev.map((c) => (c.id === complaintId ? { ...c, ...updated } : c))
+      );
+      setSelectedComplaint((prev) => prev?.id === complaintId ? { ...prev, ...updated } : prev);
+
+      // Load admins for new department
+      if (deptId) {
+        const adminsRes = await departmentsApi.getAdmins(deptId);
+        setDeptAdmins(adminsRes.data);
+      } else {
+        setDeptAdmins([]);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Failed to assign department.");
+    } finally {
+      setAssignLoading(false);
+    }
+  };
+
+  const handleAssignUser = async (complaintId: number, userId: string) => {
+    setAssignLoading(true);
+    setError("");
+    try {
+      const uid = userId === "none" ? null : Number(userId);
+      const res = await complaintsApi.assign(complaintId, { assigned_to: uid });
+      const updated = res.data;
+      setComplaints((prev) =>
+        prev.map((c) => (c.id === complaintId ? { ...c, ...updated } : c))
+      );
+      setSelectedComplaint((prev) => prev?.id === complaintId ? { ...prev, ...updated } : prev);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Failed to assign user.");
+    } finally {
+      setAssignLoading(false);
+    }
+  };
+
+  // Suggest department based on complaint category
+  const suggestDepartment = (category: string): Department | undefined => {
+    return departments.find((d) =>
+      d.categories_list?.includes(category)
+    );
   };
 
   if (authLoading || loading) {
@@ -110,7 +188,7 @@ const AdminDashboard = () => {
         <Shield className="h-6 w-6 text-primary" />
         <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
       </div>
-      <p className="text-muted-foreground mb-8">Manage and update complaint statuses. Click the eye icon to view full details.</p>
+      <p className="text-muted-foreground mb-8">Manage complaints, assign departments, and update statuses.</p>
 
       {error && (
         <div className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive p-3 mb-4 text-sm">
@@ -136,65 +214,143 @@ const AdminDashboard = () => {
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="p-5 grid md:grid-cols-2 gap-6">
-              {/* Left: Info */}
-              <div className="space-y-4">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Title</p>
-                  <p className="font-semibold text-lg">{selectedComplaint.title}</p>
+            <div className="p-5 space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Left: Info */}
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Title</p>
+                    <p className="font-semibold text-lg">{selectedComplaint.title}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Description</p>
+                    <p className="text-sm leading-relaxed">{selectedComplaint.description}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <Tag className="h-3 w-3" /> Category
+                      </p>
+                      <p className="text-sm font-medium">{selectedComplaint.category_display || selectedComplaint.category}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> Location
+                      </p>
+                      <p className="text-sm font-medium">{selectedComplaint.location}</p>
+                      {selectedComplaint.latitude && selectedComplaint.longitude && (
+                        <a
+                          href={`https://www.google.com/maps?q=${selectedComplaint.latitude},${selectedComplaint.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 mt-1 text-xs text-primary hover:underline"
+                        >
+                          <ExternalLink className="h-3 w-3" /> Open in Google Maps
+                        </a>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Status</p>
+                      <StatusBadge status={selectedComplaint.status} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <Calendar className="h-3 w-3" /> Date Reported
+                      </p>
+                      <p className="text-sm font-medium">{selectedComplaint.date}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <User className="h-3 w-3" /> Submitted By
+                      </p>
+                      <p className="text-sm font-medium">{selectedComplaint.submitted_by || "Unknown"}</p>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Right: Images */}
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Description</p>
-                  <p className="text-sm leading-relaxed">{selectedComplaint.description}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
-                      <Tag className="h-3 w-3" /> Category
-                    </p>
-                    <p className="text-sm font-medium">{selectedComplaint.category_display || selectedComplaint.category}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> Location
-                    </p>
-                    <p className="text-sm font-medium">{selectedComplaint.location}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Status</p>
-                    <StatusBadge status={selectedComplaint.status} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
-                      <Calendar className="h-3 w-3" /> Date Reported
-                    </p>
-                    <p className="text-sm font-medium">{selectedComplaint.date}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
-                      <User className="h-3 w-3" /> Submitted By
-                    </p>
-                    <p className="text-sm font-medium">{selectedComplaint.submitted_by || "Unknown"}</p>
-                  </div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Uploaded Images</p>
+                  {(selectedComplaint.images && selectedComplaint.images.length > 0) ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {selectedComplaint.images.map((img) => (
+                        <a key={img.id} href={img.image} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={img.image}
+                            alt={selectedComplaint.title}
+                            className="rounded-lg border object-cover w-full h-36 hover:opacity-90 transition-opacity cursor-pointer"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  ) : selectedComplaint.image ? (
+                    <a href={selectedComplaint.image} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={selectedComplaint.image}
+                        alt={selectedComplaint.title}
+                        className="rounded-lg border object-cover w-full max-h-80 hover:opacity-90 transition-opacity cursor-pointer"
+                      />
+                    </a>
+                  ) : (
+                    <div className="flex items-center justify-center rounded-lg border border-dashed bg-muted/30 h-48">
+                      <p className="text-sm text-muted-foreground">No image uploaded</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Right: Image */}
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Uploaded Image</p>
-                {selectedComplaint.image ? (
-                  <a href={selectedComplaint.image} target="_blank" rel="noopener noreferrer">
-                    <img
-                      src={selectedComplaint.image}
-                      alt={selectedComplaint.title}
-                      className="rounded-lg border object-cover w-full max-h-80 hover:opacity-90 transition-opacity cursor-pointer"
-                    />
-                  </a>
-                ) : (
-                  <div className="flex items-center justify-center rounded-lg border border-dashed bg-muted/30 h-48">
-                    <p className="text-sm text-muted-foreground">No image uploaded</p>
+              {/* Assignment Section */}
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-primary" /> Department Assignment
+                </h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground font-medium">Assign to Department</label>
+                    <Select
+                      value={selectedComplaint.assigned_department ? String(selectedComplaint.assigned_department) : "none"}
+                      onValueChange={(v) => handleAssignDepartment(selectedComplaint.id, v)}
+                      disabled={assignLoading}
+                    >
+                      <SelectTrigger className="bg-card">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card z-50">
+                        <SelectItem value="none">— Unassigned —</SelectItem>
+                        {departments.map((d) => (
+                          <SelectItem key={d.id} value={String(d.id)}>
+                            {d.name}
+                            {suggestDepartment(selectedComplaint.category)?.id === d.id
+                              ? " ⭐ Suggested"
+                              : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                      <UserCheck className="h-3 w-3" /> Assign to Officer
+                    </label>
+                    <Select
+                      value={selectedComplaint.assigned_to ? String(selectedComplaint.assigned_to) : "none"}
+                      onValueChange={(v) => handleAssignUser(selectedComplaint.id, v)}
+                      disabled={assignLoading || !selectedComplaint.assigned_department}
+                    >
+                      <SelectTrigger className="bg-card">
+                        <SelectValue placeholder={selectedComplaint.assigned_department ? "Select officer" : "Select department first"} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card z-50">
+                        <SelectItem value="none">— Unassigned —</SelectItem>
+                        {deptAdmins.map((a) => (
+                          <SelectItem key={a.id} value={String(a.id)}>
+                            {a.first_name} {a.last_name} ({a.role})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -210,6 +366,7 @@ const AdminDashboard = () => {
               <TableHead>Title</TableHead>
               <TableHead className="hidden md:table-cell">Category</TableHead>
               <TableHead className="hidden lg:table-cell">Location</TableHead>
+              <TableHead className="hidden xl:table-cell">Department</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Action</TableHead>
               <TableHead className="w-[50px]">View</TableHead>
@@ -218,7 +375,7 @@ const AdminDashboard = () => {
           <TableBody>
             {complaints.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   No complaints found.
                 </TableCell>
               </TableRow>
@@ -231,7 +388,29 @@ const AdminDashboard = () => {
                   <TableCell className="font-mono text-xs">{c.complaint_id}</TableCell>
                   <TableCell className="font-medium max-w-[200px] truncate">{c.title}</TableCell>
                   <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{c.category_display}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{c.location}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                    {c.latitude && c.longitude ? (
+                      <a
+                        href={`https://www.google.com/maps?q=${c.latitude},${c.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        {c.location} <ExternalLink className="h-3 w-3" />
+                      </a>
+                    ) : (
+                      c.location
+                    )}
+                  </TableCell>
+                  <TableCell className="hidden xl:table-cell text-sm">
+                    {c.assigned_department_name ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        <Building2 className="h-3 w-3" /> {c.assigned_department_name}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell><StatusBadge status={c.status} /></TableCell>
                   <TableCell>
                     <Select

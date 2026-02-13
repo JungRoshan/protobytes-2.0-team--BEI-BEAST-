@@ -19,6 +19,23 @@ export interface Complaint {
   date: string;
 }
 
+export interface Department {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  categories: string;
+  categories_list: string[];
+}
+
+export interface DepartmentAdmin {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+}
+
 export const sampleComplaints: Complaint[] = [
   {
     id: "HA-2025-001",
