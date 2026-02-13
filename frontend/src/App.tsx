@@ -13,6 +13,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Complaints from "./pages/Complaints";
+import ComplaintDetail from "./pages/ComplaintDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
                 <Route path="/report" element={<ReportIssue />} />
                 <Route path="/track" element={<TrackComplaint />} />
                 <Route path="/complaints" element={<Complaints />} />
+                <Route path="/complaints/:complaintId" element={<ComplaintDetail />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />

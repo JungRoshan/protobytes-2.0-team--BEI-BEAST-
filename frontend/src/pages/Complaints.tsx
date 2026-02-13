@@ -198,7 +198,8 @@ const Complaints = () => {
                         return (
                             <div
                                 key={c.id}
-                                className="rounded-xl border bg-card card-shadow overflow-hidden hover:shadow-lg transition-shadow"
+                                className="rounded-xl border bg-card card-shadow overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                                onClick={() => navigate(`/complaints/${c.complaint_id}`)}
                             >
                                 {/* Image */}
                                 {cardImg && (

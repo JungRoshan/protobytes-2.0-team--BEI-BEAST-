@@ -63,6 +63,9 @@ export const authApi = {
     },
 
     me: () => api.get('/auth/me/'),
+
+    googleLogin: (credential: string) =>
+        api.post('/auth/google/', { credential }),
 };
 
 // Complaints APIs

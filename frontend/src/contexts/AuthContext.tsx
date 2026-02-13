@@ -30,6 +30,7 @@ interface AuthContextType {
         first_name: string;
         last_name: string;
     }) => Promise<void>;
+    googleLogin: (credential: string) => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -76,6 +77,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(res.data.user);
     };
 
+    const googleLogin = async (credential: string) => {
+        const res = await authApi.googleLogin(credential);
+        localStorage.setItem('access_token', res.data.tokens.access);
+        localStorage.setItem('refresh_token', res.data.tokens.refresh);
+        setUser(res.data.user);
+    };
+
     const logout = async () => {
         try {
             await authApi.logout();
@@ -96,6 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 loading,
                 login,
                 register,
+                googleLogin,
                 logout,
             }}
         >
